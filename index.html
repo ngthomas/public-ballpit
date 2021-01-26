@@ -1,0 +1,450 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Pedigree Visual</title>
+        
+        <script type="text/javascript" src="js/vis.min.js"></script>
+        <script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
+        <script type="text/javascript" src="js/papaparse.min.js"></script>
+        <style>
+            #mynetwork, #Process {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+            }
+            </style>
+
+
+    </head>
+    
+    <body>
+        
+    Node: <input id="NodeFile" type="file" ></input>
+    Edge: <input id="EdgeFile" type="file" ></input>
+    <button id="submit">Submit</button>
+    <button id="leftB"><</button>
+        <button id="rightB">></button>
+    
+    
+    <div id="mynetwork"> </div>
+    
+    <script type="text/javascript">
+            // create an array with nodes
+var historyCt = 0;
+var node, edges;
+var edgeData, nodeData, network;
+var fileIn = 0;
+var direction = 1;
+
+
+function enableButton()
+{
+    $('#submit').prop('disabled', false);
+}
+    
+    
+$('#submit').click(function() {
+    if ($(this).prop('disabled') == "true")
+        return;
+                   
+
+   // Allow only one parse at a time
+   $(this).prop('disabled', true);
+   
+    if (!$('#EdgeFile')[0].files.length) {
+       alert("Please choose an Edge file to parse.");
+       return enableButton();
+    }
+/*
+    if (!$('#NodeFile')[0].files.length) {
+    alert("Please choose an Node file to parse.");
+    return enableButton();
+    }*/
+    
+                   fileIn = 0;
+    $('#NodeFile').parse({config:{
+        delimiter: ",",	// auto-detect
+        newline: "",	// auto-detect
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results, file) {
+         console.log("Parsing complete:", results, file);
+         nodeData = results;
+         fileIn++;
+         }
+        },
+     before: function(file, inputElem)
+     {
+     console.log("Parsing Node file...", file);
+     },
+     error: function(err, file)
+     {
+     console.log("ERROR:", err, file);
+     }
+     });
+    
+    $('#EdgeFile').parse({config:{
+    delimiter: ",",	// auto-detect
+    newline: "",	// auto-detect
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results, file) {
+    console.log("Parsing complete:", results, file);
+    edgeData = results;
+    fileIn++;
+                         
+                         if(fileIn==2) {
+                         startNetwork();
+                         AllowDirec();
+                         }
+    }
+    },
+    before: function(file, inputElem)
+    {
+    console.log("Parsing Edge file...", file);
+    },
+    error: function(err, file)
+    {
+    console.log("ERROR:", err, file);
+    }
+    });
+    
+
+});
+
+function AllowDirec() {
+$('#leftB').click(function() {
+                 if (historyCt > 1) {
+                  if (direction==1) {
+                  direction = 0;
+                  updateGraph();
+                  }
+                  else {historyCt--;
+                  direction=0;
+                  updateGraph();
+                  }
+                 }
+                 });
+                 
+$('#rightB').click(function() {
+                   if (direction==0) {
+                   direction = 1;
+                   updateGraph();
+                   }
+                   else {historyCt++;
+                   direction=1;
+                   updateGraph();
+                   }
+                                  });
+}
+    
+/*
+            var csvConfig= {
+                delimiter: ",",	// auto-detect
+                newline: "",	// auto-detect
+                header: false,
+                preview: 0,
+                complete: function(results, file) {
+                    console.log("Parsing complete:", results, file);
+                    edgeData = results;
+                }
+            };
+    
+            $('#EdgeFile').parse(csvConfig);
+ */
+            //alert(JSON.parse(EdgeData));
+
+            $(document).keydown(function(e){
+                if (fileIn < 2) return;
+                if (e.keyCode == 37 || e.keyCode == 39) {
+                    if (e.keyCode == 37 && historyCt > 1) { //press left
+                                if (direction==1) {
+                                direction = 0;
+                                updateGraph();
+                                }
+                                else {historyCt--;
+                                direction=0;
+                                updateGraph();
+                                }
+                    }
+                
+                    else if (e.keyCode == 39) {
+                                if (direction==0) {
+                                direction = 1;
+                                updateGraph();
+                                }
+                                else {historyCt++;
+                                direction=1;
+                                updateGraph();
+                                }
+                    }
+                    
+                    $('#Process').html('STEP: ' + historyCt);
+
+                }
+                e.preventDefault();
+            });
+
+
+/*
+            var nodes = [
+             { id: 1, label: '1', level: 4, group:'maleObs'},
+             {id: 2, label: '2', level: 2, group:'maleUnobs'},
+             {id: 3, label: '3', level: 6, group:'maleObs'},
+             {id: 4, label: '4', level: 0, group:'maleObs'},
+             {id: 5, label: '5', level: 4, group:'femaleUnobs'},
+             {id: 6, label: '6', level: 0, group:'femaleObs'},
+             {id: '1p', label: 'p/g', level: 5, group:'o-nodes'},
+             {id: '1-5', label: 'm', level: 3, group:'m-nodes'},
+             ];
+             
+             // create an array with edges
+             var edges = [
+              {from: '1-5', to: 1},
+              {from: 1, to: 3},
+              {from: 2, to: 4},
+              {from: '1-5', to: 5},
+              {from: '1p', to: 1},
+              {from: '1-5', to: 2},
+              ];
+*/
+    
+    function updateGraph() {
+        for (i=1; i<nodeData.data.length;i++) {
+            if(nodeData.data[i].t <= historyCt) {
+
+                if (nodeData.data[i].t == historyCt) {
+
+//the "action" column of the node File : if it is 0 or 1 : add and remove node
+
+if (nodeData.data[i].action <= 1) {
+                    if ((nodeData.data[i].action == 1 && direction== 1) || (nodeData.data[i].action == 0 && direction== 0)) {
+                        console.log("adding nodes");
+
+                    nodes.add({id:nodeData.data[i].id,
+                              label:nodeData.data[i].label,
+                              level:nodeData.data[i].level,
+                              group:nodeData.data[i].group,
+                              borderWidth:2});
+                    }
+                    else {
+                        nodes.remove({id: nodeData.data[i].id});
+                    }
+                    
+}
+// if the action is 2 : highlight the node;  3: unlight the node
+if (nodeData.data[i].action == 2 || nodeData.data[i].action == 3) {
+if ((nodeData.data[i].action == 2 && direction== 1 )|| (nodeData.data[i].action == 3 && direction== 0 )){
+ nodes.update({id:nodeData.data[i].id,
+              group:undefined,
+              color: {
+              border: '#ff5c33'},
+              borderWidth:4});
+ //label:nodeData.data[i].label,
+ //level:nodeData.data[i].level,
+ //group:nodeData.data[i].group});
+ 
+ }
+ else{
+ nodes.update({id:nodeData.data[i].id,
+              group:nodeData.data[i].group,
+              borderWidth:2});
+ 
+ }
+}
+
+
+                }
+            }
+            else {
+                break;
+            }}
+        
+        for (i=1; i<edgeData.data.length;i++) {
+            if(edgeData.data[i].t <= historyCt) {
+                if (edgeData.data[i].t == historyCt) {
+                    if ((edgeData.data[i].action == 1 && direction== 1) || (edgeData.data[i].action == 0 && direction== 0)) {
+                        console.log("adding edges");
+
+                    edges.add({
+                              id:edgeData.data[i].id,
+                              from:edgeData.data[i].from,
+                              to:edgeData.data[i].to,
+                              width:5});
+                    }
+                    else {
+                        edges.remove({id: edgeData.data[i].id});
+                    }
+                    
+                }
+            }
+            else {
+                break;
+            }}
+
+    }
+    
+    function startNetwork() {
+              // create a network
+              var container = document.getElementById('mynetwork');
+              
+              nodes = new vis.DataSet([{id:nodeData.data[0].id,
+                                       label:nodeData.data[0].label,
+                                       level:nodeData.data[0].level,
+                                       group:nodeData.data[0].group}]);
+                                       
+           edges = new vis.DataSet([{id:edgeData.data[0].id,
+                                    from: edgeData.data[0].from,
+                                    to: edgeData.data[0].to,
+                                    width: 5}]);
+
+
+              for (i=1; i<nodeData.data.length;i++) {
+                  if(nodeData.data[i].t < 1) {
+                      if (nodeData.data[i].t == 0) {
+                          console.log("adding nodes");
+                          
+                          nodes.add({id:nodeData.data[i].id,
+                                    label:nodeData.data[i].label,
+                                    level:nodeData.data[i].level,
+                                    group:nodeData.data[i].group,
+                                    borderWidth:2});
+                      }
+                  }
+                  else {
+                      break;
+                  }}
+              
+              for (i=1; i<edgeData.data.length;i++) {
+                  if(edgeData.data[i].t < 1) {
+                      if (edgeData.data[i].t == 0) {
+                          console.log("adding edges");
+                          
+                          edges.add({id:edgeData.data[i].id,
+                                    from:edgeData.data[i].from,
+                                    to:edgeData.data[i].to,
+                                    width:5});
+                      }
+                  }
+                  else {
+                      break;
+                  }}
+              
+              
+              var data= {
+                  nodes: nodes,
+                  edges: edges,
+              };
+    
+        var options = {
+            width: '1400px',
+            height: '800px',
+            //hideNodesOnDrag: true,
+            //hideEdgesOnDrag: true,
+            /*edges: {
+                
+                smooth: {
+                    type:'cubicBezier',
+                    forceDirection: 'horizontal',
+                    roundness: 0.4,
+                }
+                
+            },*/
+            groups: {
+                11: {
+                    shape : 'square',
+                    color: {
+                        border: '#20b9a5',
+                        background: '#1BE6CB'
+                    }
+                },
+                21: {
+                    shape: 'dot',
+                    color: {
+                        border: '#20b9a5',
+                        background: '#1BE6CB'
+                    }
+                },
+                1: {
+                    shape: 'triangle',
+                    color: {
+                        border: '#1BE6CB',
+                        background: '#1BE6CB'
+                    }
+                },
+                10: {
+                    shape : 'square',
+                    color: {
+                        border: '#1BE6CB',
+                        background: '#FFFFFF'
+                    }
+                },
+                20: {
+                    shape: 'dot',
+                    color: {
+                        border: '#1BE6CB',
+                        background: '#FFFFFF'
+                    }
+                },
+                0: {
+                    shape: 'triangle',
+                    color: {
+                        border: '#1BE6CB',
+                        background: '#FFFFFF'
+                    }
+                },
+                'm-nodes': {
+                    shape: 'dot',
+                    mass: 20,
+                    size: 2,
+                    color: {
+                        border: '#000000',
+                        background: '#000000'
+                    }
+                },
+                'o-nodes' :{
+                    shape: 'dot',
+                    size: 2,
+                    mass:1,
+                    color: {
+                        border: '#000000',
+                        background: '#000000'
+                    }
+                }
+            },
+            layout: {
+                hierarchical:{
+                    direction: "DU",
+                    levelSeparation: 100,
+                }
+            },
+            
+            physics:{
+                stabilization: false,
+                
+                hierarchicalRepulsion: {
+                    centralGravity: 0,
+                    springLength: 60,
+                    springConstant: 2.0,//1.7,
+                    //nodeDistance: 100,
+                    nodeDistance: 150,
+                    damping: 0.3
+                },
+                solver: 'hierarchicalRepulsion'
+            }
+            
+            
+            
+        };
+        
+        network = new vis.Network(container, data, options);
+        
+
+    }
+    
+        </script>
+    <div id="Process">STEP: 0</div>
+
+
+    </body>
+</html>
