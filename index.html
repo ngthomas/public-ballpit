@@ -93,29 +93,37 @@ $('#rightB').click(function() {
 
     var fileIn = 0;
 
-    $.ajax({
-      url: 'data/historyNode.csv',
-      dataType: 'text',
-    }).done(function(results, file) {
-     console.log("Parsing complete:", results, file);
-     nodeData = results;
-     fileIn++;
-     });
 
-     $.ajax({
-       url: 'data/historyEdge.csv',
-       dataType: 'text',
-     }).done(function(results, file) {
-       console.log("Parsing complete:", results, file);
-       edgeData = results;
-       fileIn++;
+    Papa.parse("https://raw.githubusercontent.com/ngthomas/public-ballpit/main/data/historyNode.csv", {
+      download: true,
+        delimiter: "",	// auto-detect
+        newline: "",	// auto-detect
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results, file) {
+         console.log("Parsing complete:", results, file);
+         nodeData = results;
+         fileIn++;
+         }
+       });
 
-                            if(fileIn==2) {
-                            startNetwork();
-                            AllowDirec();
-                            }
-      });
+    Papa.parse("https://raw.githubusercontent.com/ngthomas/public-ballpit/main/data/historyEdge.csv",{
+      download: true,
+    delimiter: "",	// auto-detect
+    newline: "",	// auto-detect
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results, file) {
+    console.log("Parsing complete:", results, file);
+    edgeData = results;
+    fileIn++;
 
+                         if(fileIn==2) {
+                         startNetwork();
+                         AllowDirec();
+                         }
+    }
+  });
 /*
             var csvConfig= {
                 delimiter: ",",	// auto-detect
