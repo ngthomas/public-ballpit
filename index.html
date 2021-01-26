@@ -2,7 +2,7 @@
 <html>
     <head>
         <title>Pedigree Visual</title>
-        
+
         <script type="text/javascript" src="js/vis.min.js"></script>
         <script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
         <script type="text/javascript" src="js/papaparse.min.js"></script>
@@ -16,18 +16,18 @@
 
 
     </head>
-    
+
     <body>
-        
-    Node: <input id="NodeFile" type="file" ></input>
+
+    <!-- Node: <input id="NodeFile" type="file" ></input>
     Edge: <input id="EdgeFile" type="file" ></input>
     <button id="submit">Submit</button>
     <button id="leftB"><</button>
-        <button id="rightB">></button>
-    
-    
+        <button id="rightB">></button> -->
+
+
     <div id="mynetwork"> </div>
-    
+
     <script type="text/javascript">
             // create an array with nodes
 var historyCt = 0;
@@ -41,16 +41,16 @@ function enableButton()
 {
     $('#submit').prop('disabled', false);
 }
-    
-    
+
+
 $('#submit').click(function() {
     if ($(this).prop('disabled') == "true")
         return;
-                   
+
 
    // Allow only one parse at a time
    $(this).prop('disabled', true);
-   
+
     if (!$('#EdgeFile')[0].files.length) {
        alert("Please choose an Edge file to parse.");
        return enableButton();
@@ -60,55 +60,7 @@ $('#submit').click(function() {
     alert("Please choose an Node file to parse.");
     return enableButton();
     }*/
-    
-                   fileIn = 0;
-    $('#NodeFile').parse({config:{
-        delimiter: ",",	// auto-detect
-        newline: "",	// auto-detect
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results, file) {
-         console.log("Parsing complete:", results, file);
-         nodeData = results;
-         fileIn++;
-         }
-        },
-     before: function(file, inputElem)
-     {
-     console.log("Parsing Node file...", file);
-     },
-     error: function(err, file)
-     {
-     console.log("ERROR:", err, file);
-     }
-     });
-    
-    $('#EdgeFile').parse({config:{
-    delimiter: ",",	// auto-detect
-    newline: "",	// auto-detect
-    header: true,
-    skipEmptyLines: true,
-    complete: function(results, file) {
-    console.log("Parsing complete:", results, file);
-    edgeData = results;
-    fileIn++;
-                         
-                         if(fileIn==2) {
-                         startNetwork();
-                         AllowDirec();
-                         }
-    }
-    },
-    before: function(file, inputElem)
-    {
-    console.log("Parsing Edge file...", file);
-    },
-    error: function(err, file)
-    {
-    console.log("ERROR:", err, file);
-    }
-    });
-    
+
 
 });
 
@@ -125,7 +77,7 @@ $('#leftB').click(function() {
                   }
                  }
                  });
-                 
+
 $('#rightB').click(function() {
                    if (direction==0) {
                    direction = 1;
@@ -137,7 +89,33 @@ $('#rightB').click(function() {
                    }
                                   });
 }
-    
+
+
+    var fileIn = 0;
+
+    $.ajax({
+      url: 'data/historyNode.csv',
+      dataType: 'text',
+    }).done(function(results, file) {
+     console.log("Parsing complete:", results, file);
+     nodeData = results;
+     fileIn++;
+     });
+
+     $.ajax({
+       url: 'data/historyEdge.csv',
+       dataType: 'text',
+     }).done(function(results, file) {
+       console.log("Parsing complete:", results, file);
+       edgeData = results;
+       fileIn++;
+
+                            if(fileIn==2) {
+                            startNetwork();
+                            AllowDirec();
+                            }
+      });
+
 /*
             var csvConfig= {
                 delimiter: ",",	// auto-detect
@@ -149,7 +127,7 @@ $('#rightB').click(function() {
                     edgeData = results;
                 }
             };
-    
+
             $('#EdgeFile').parse(csvConfig);
  */
             //alert(JSON.parse(EdgeData));
@@ -167,7 +145,7 @@ $('#rightB').click(function() {
                                 updateGraph();
                                 }
                     }
-                
+
                     else if (e.keyCode == 39) {
                                 if (direction==0) {
                                 direction = 1;
@@ -178,7 +156,7 @@ $('#rightB').click(function() {
                                 updateGraph();
                                 }
                     }
-                    
+
                     $('#Process').html('STEP: ' + historyCt);
 
                 }
@@ -197,7 +175,7 @@ $('#rightB').click(function() {
              {id: '1p', label: 'p/g', level: 5, group:'o-nodes'},
              {id: '1-5', label: 'm', level: 3, group:'m-nodes'},
              ];
-             
+
              // create an array with edges
              var edges = [
               {from: '1-5', to: 1},
@@ -208,7 +186,7 @@ $('#rightB').click(function() {
               {from: '1-5', to: 2},
               ];
 */
-    
+
     function updateGraph() {
         for (i=1; i<nodeData.data.length;i++) {
             if(nodeData.data[i].t <= historyCt) {
@@ -230,7 +208,7 @@ if (nodeData.data[i].action <= 1) {
                     else {
                         nodes.remove({id: nodeData.data[i].id});
                     }
-                    
+
 }
 // if the action is 2 : highlight the node;  3: unlight the node
 if (nodeData.data[i].action == 2 || nodeData.data[i].action == 3) {
@@ -243,13 +221,13 @@ if ((nodeData.data[i].action == 2 && direction== 1 )|| (nodeData.data[i].action 
  //label:nodeData.data[i].label,
  //level:nodeData.data[i].level,
  //group:nodeData.data[i].group});
- 
+
  }
  else{
  nodes.update({id:nodeData.data[i].id,
               group:nodeData.data[i].group,
               borderWidth:2});
- 
+
  }
 }
 
@@ -259,7 +237,7 @@ if ((nodeData.data[i].action == 2 && direction== 1 )|| (nodeData.data[i].action 
             else {
                 break;
             }}
-        
+
         for (i=1; i<edgeData.data.length;i++) {
             if(edgeData.data[i].t <= historyCt) {
                 if (edgeData.data[i].t == historyCt) {
@@ -275,7 +253,7 @@ if ((nodeData.data[i].action == 2 && direction== 1 )|| (nodeData.data[i].action 
                     else {
                         edges.remove({id: edgeData.data[i].id});
                     }
-                    
+
                 }
             }
             else {
@@ -283,16 +261,16 @@ if ((nodeData.data[i].action == 2 && direction== 1 )|| (nodeData.data[i].action 
             }}
 
     }
-    
+
     function startNetwork() {
               // create a network
               var container = document.getElementById('mynetwork');
-              
+
               nodes = new vis.DataSet([{id:nodeData.data[0].id,
                                        label:nodeData.data[0].label,
                                        level:nodeData.data[0].level,
                                        group:nodeData.data[0].group}]);
-                                       
+
            edges = new vis.DataSet([{id:edgeData.data[0].id,
                                     from: edgeData.data[0].from,
                                     to: edgeData.data[0].to,
@@ -303,7 +281,7 @@ if ((nodeData.data[i].action == 2 && direction== 1 )|| (nodeData.data[i].action 
                   if(nodeData.data[i].t < 1) {
                       if (nodeData.data[i].t == 0) {
                           console.log("adding nodes");
-                          
+
                           nodes.add({id:nodeData.data[i].id,
                                     label:nodeData.data[i].label,
                                     level:nodeData.data[i].level,
@@ -314,12 +292,12 @@ if ((nodeData.data[i].action == 2 && direction== 1 )|| (nodeData.data[i].action 
                   else {
                       break;
                   }}
-              
+
               for (i=1; i<edgeData.data.length;i++) {
                   if(edgeData.data[i].t < 1) {
                       if (edgeData.data[i].t == 0) {
                           console.log("adding edges");
-                          
+
                           edges.add({id:edgeData.data[i].id,
                                     from:edgeData.data[i].from,
                                     to:edgeData.data[i].to,
@@ -329,26 +307,26 @@ if ((nodeData.data[i].action == 2 && direction== 1 )|| (nodeData.data[i].action 
                   else {
                       break;
                   }}
-              
-              
+
+
               var data= {
                   nodes: nodes,
                   edges: edges,
               };
-    
+
         var options = {
             width: '1400px',
             height: '800px',
             //hideNodesOnDrag: true,
             //hideEdgesOnDrag: true,
             /*edges: {
-                
+
                 smooth: {
                     type:'cubicBezier',
                     forceDirection: 'horizontal',
                     roundness: 0.4,
                 }
-                
+
             },*/
             groups: {
                 11: {
@@ -418,10 +396,10 @@ if ((nodeData.data[i].action == 2 && direction== 1 )|| (nodeData.data[i].action 
                     levelSeparation: 100,
                 }
             },
-            
+
             physics:{
                 stabilization: false,
-                
+
                 hierarchicalRepulsion: {
                     centralGravity: 0,
                     springLength: 60,
@@ -432,16 +410,16 @@ if ((nodeData.data[i].action == 2 && direction== 1 )|| (nodeData.data[i].action 
                 },
                 solver: 'hierarchicalRepulsion'
             }
-            
-            
-            
+
+
+
         };
-        
+
         network = new vis.Network(container, data, options);
-        
+
 
     }
-    
+
         </script>
     <div id="Process">STEP: 0</div>
 
